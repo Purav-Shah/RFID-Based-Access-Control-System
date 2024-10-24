@@ -1,0 +1,227 @@
+C51 COMPILER V9.60.7.0   RFID_CODE                                                         03/18/2024 00:17:07 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE RFID_CODE
+OBJECT MODULE PLACED IN .\Objects\RFID_Code.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE RFID_Code.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings
+                    -\RFID_Code.lst) TABS(2) OBJECT(.\Objects\RFID_Code.obj)
+
+line level    source
+
+   1          // RFID Based Attendance System Using 8051 Microcontroller
+   2          //library description
+   3          #include<reg51.h>
+   4          #include<string.h>
+   5          #include<stdio.h>
+   6          #define LCDPORT P1
+   7          
+   8          sbit rs=P1^0;
+   9          sbit rw=P1^1;
+  10          sbit en=P1^2;
+  11          sbit Motor1=P2^4;
+  12          sbit Motor2=P2^3;
+  13          sbit Speaker=P2^6;
+  14          char i,rx_data[50];
+  15          char rfid[13],ch=0;
+  16          int counter1, counter2, counter3;
+  17          unsigned char result[1];
+  18          
+  19           void delay(int itime)
+  20          {
+  21   1          int i,j;
+  22   1          for(i=0;i<itime;i++)
+  23   1          for(j=0;j<1275;j++);
+  24   1      }
+  25          
+  26          void daten()
+  27          {
+  28   1          rs=1;
+  29   1          rw=0;
+  30   1          en=1;
+  31   1          delay(5);
+  32   1          en=0;
+  33   1      }
+  34          
+  35          void lcddata(unsigned char ch)
+  36          {
+  37   1          LCDPORT=ch & 0xf0;
+  38   1          daten();
+  39   1          LCDPORT=(ch<<4) & 0xf0;
+  40   1          daten();
+  41   1      }
+  42          
+  43          void cmden(void)
+  44          {
+  45   1          rs=0;
+  46   1          en=1;
+  47   1          delay(5);
+  48   1          en=0;
+  49   1      }
+  50          
+  51          void lcdcmd(unsigned char ch)
+  52          {
+  53   1          LCDPORT=ch & 0xf0;
+  54   1          cmden();
+C51 COMPILER V9.60.7.0   RFID_CODE                                                         03/18/2024 00:17:07 PAGE 2   
+
+  55   1          LCDPORT=(ch<<4) & 0xf0;
+  56   1          cmden();
+  57   1      }
+  58          
+  59          void lcdstring(char *str)
+  60          {
+  61   1          while(*str)
+  62   1          {
+  63   2              lcddata(*str);
+  64   2              str++;
+  65   2          }
+  66   1      }
+  67          
+  68          void lcd_init(void)
+  69          {
+  70   1          lcdcmd(0x02);
+  71   1          lcdcmd(0x28);
+  72   1          lcdcmd(0x0e);
+  73   1          lcdcmd(0x01);
+  74   1      }
+  75          
+  76          void uart_init()
+  77          {
+  78   1       TMOD=0x20;
+  79   1       SCON=0x50;
+  80   1       TH1=0xfd;
+  81   1       TR1=1;
+  82   1      }
+  83          char rxdata()
+  84          {
+  85   1        while(!RI);
+  86   1          ch=SBUF;    
+  87   1          RI=0;
+  88   1          return ch;
+  89   1      }
+  90          
+  91          void main()
+  92          {
+  93   1          Speaker=1;
+  94   1          uart_init();
+  95   1          lcd_init();
+  96   1          lcdstring("RFID Based Access");
+  97   1          lcdcmd(0xc0);
+  98   1          lcdstring("Control System"); 
+  99   1          delay(500);
+ 100   1          lcd_init();
+ 101   1          lcdstring("Group 5");
+ 102   1          lcdcmd(0xc0);
+ 103   1          lcdstring("C006,C016,C033");
+ 104   1          delay(400);
+ 105   1          while(1)
+ 106   1          {
+ 107   2              lcdcmd(1);
+ 108   2              lcdstring("Scan Your Card:");
+ 109   2              lcdcmd(0xc0);
+ 110   2              i=0;
+ 111   2              for(i=0;i<12;i++)
+ 112   2              rfid[i]=rxdata();
+ 113   2              rfid[i]='\0';
+ 114   2              lcdcmd(1);
+ 115   2              lcdstring("Rfid No. is:");
+ 116   2              lcdcmd(0xc0);
+C51 COMPILER V9.60.7.0   RFID_CODE                                                         03/18/2024 00:17:07 PAGE 3   
+
+ 117   2              for(i=0;i<12;i++)
+ 118   2              lcddata(rfid[i]);
+ 119   2              delay(100);
+ 120   2              if(strncmp(rfid,"10035AD856C1",12)==0)
+ 121   2              {
+ 122   3                  counter1++;
+ 123   3                  lcdcmd(1);             
+ 124   3                  lcdstring(" Authorised");
+ 125   3                  delay(200);
+ 126   3                  lcdcmd(1);
+ 127   3                  lcdstring(" Manya ");
+ 128   3                  delay(200);
+ 129   3      
+ 130   3                  Motor1=1;
+ 131   3                  Motor2=0;
+ 132   3                  delay(300);
+ 133   3                  Motor1=0;
+ 134   3                  Motor2=0;
+ 135   3                  delay(200);
+ 136   3                  Motor1=0;
+ 137   3                  Motor2=1;
+ 138   3              }
+ 139   2              
+ 140   2              else if(strncmp(rfid,"1600ADC369A1",12)==0)
+ 141   2                  {
+ 142   3                  counter2++;
+ 143   3                  lcdcmd(1);
+ 144   3                  lcdstring(" Authorised");
+ 145   3                  delay(200);
+ 146   3                  lcdcmd(1);
+ 147   3                  lcdstring(" Mansi ");
+ 148   3                  delay(200);
+ 149   3      
+ 150   3                  Motor1=1;
+ 151   3                  Motor2=0;
+ 152   3                  delay(300);
+ 153   3                  Motor1=0;
+ 154   3                  Motor2=0;
+ 155   3                  delay(200);
+ 156   3                  Motor1=0;
+ 157   3                  Motor2=1;
+ 158   3                  delay(300);
+ 159   3                  Motor1=0;
+ 160   3                  Motor2=0;
+ 161   3                  }
+ 162   2                  
+ 163   2                  else if(strncmp(rfid,"1600ABCD147A",12)==0)
+ 164   2                  {
+ 165   3                      counter3++;
+ 166   3                  lcdcmd(1);
+ 167   3                  lcdstring(" Authorised");
+ 168   3                  delay(200);
+ 169   3                  lcdcmd(1);
+ 170   3                  lcdstring(" Purav ");
+ 171   3                  delay(200);
+ 172   3                  
+ 173   3                  Motor1=1;
+ 174   3                  Motor2=0;
+ 175   3                  delay(300);
+ 176   3                  Motor1=0;
+ 177   3                  Motor2=0;
+ 178   3                  delay(200);
+C51 COMPILER V9.60.7.0   RFID_CODE                                                         03/18/2024 00:17:07 PAGE 4   
+
+ 179   3                  Motor1=0;
+ 180   3                  Motor2=1;
+ 181   3                  delay(300);
+ 182   3                  Motor1=0;
+ 183   3                  Motor2=0;
+ 184   3                  }
+ 185   2      
+ 186   2              else 
+ 187   2              {
+ 188   3                 lcdcmd(1);
+ 189   3                 lcdstring("UNAUTHORISED");
+ 190   3                 lcdcmd(0xc0);
+ 191   3                 lcdstring("Try Another Card");
+ 192   3                 Speaker=0;
+ 193   3                 delay(300);
+ 194   3                 Speaker=1;
+ 195   3              }
+ 196   2        }
+ 197   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    622    ----
+   CONSTANT SIZE    =    190    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     72       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
